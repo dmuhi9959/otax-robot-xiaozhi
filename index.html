@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Otak Pribadi Xiaozhi</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+body{background:#1a1a2e;color:#fff;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+.header{background:#16213e;padding:15px;text-align:center;font-weight:bold;font-size:1.1rem;border-bottom:2px solid #0f3460;position:sticky;top:0;z-index:100}
+.content{flex:1;overflow-y:auto;padding:15px;padding-bottom:70px}
+.card{background:#16213e;padding:15px;border-radius:10px;margin-bottom:15px;border:1px solid #0f3460}
+.card h3{margin-bottom:10px;color:#e94560;font-size:1rem}
+.form-group{margin-bottom:15px}
+.form-group label{display:block;font-size:0.8rem;color:#aaa;margin-bottom:5px}
+.form-group input, .form-group textarea{width:100%;padding:12px;background:#1a1a2e;border:1px solid #0f3460;border-radius:8px;color:#fff;font-size:1rem;font-family:inherit}
+.btn{width:100%;padding:14px;background:#e94560;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:bold;cursor:pointer;margin-top:10px}
+.btn-blue{background:#0f3460}
+.btn-hapus{background:#c0392b;padding:5px 10px;font-size:0.75rem;width:auto;border-radius:5px;border:none;color:#fff;cursor:pointer}
+.btn-edit{background:#f39c12;padding:5px 10px;font-size:0.75rem;width:auto;border-radius:5px;border:none;color:#000;cursor:pointer;margin-right:5px}
+.list-item{background:#0f3460;padding:15px;border-radius:8px;margin-bottom:10px}
+.list-item h4{color:#e94560;margin-bottom:5px;text-transform:capitalize}
+.list-item p{margin-top:8px;font-size:0.9rem;color:#ddd;line-height:1.4}
+.btn-batal{background:#555;padding:10px;width:100%;margin-top:10px;border:none;color:#fff;border-radius:8px;cursor:pointer;display:none}
+</style>
+</head>
+<body>
+
+<div class="header"><i class="fas fa-brain"></i> Otak Pribadi Xiaozhi</div>
+
+<div class="content" id="mainContent">
+    <div class="card">
+        <h3 id="judulForm"><i class="fas fa-plus-circle"></i> Tambah Ingatan Baru</h3>
+        <input type="hidden" id="editId">
+        <div class="form-group">
+            <label>Topik / Kata Kunci</label>
+            <input id="topikData" placeholder="Contoh: Penghuni Rumah, Wifi, Kucing">
+        </div>
+        <div class="form-group">
+            <label>Detail Informasi (Jawaban untuk Robot)</label>
+            <textarea id="isiData" rows="4" placeholder="Contoh: Di rumah ada Budi, Ibu, dan kucing Oren."></textarea>
+        </div>
+        <button class="btn" onclick="simpanData()"><i class="fas fa-save"></i> Simpan ke Server</button>
+        <button class="btn-batal" id="btnBatal" onclick="resetForm()">Batal Edit</button>
+    </div>
+
+    <div class="card">
+        <h3><i class="fas fa-database"></i> Daftar Ingatan Robot</h3>
+        <div id="listData">Memuat data...</div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDlNDaftpdvCvtCq3S9JjBHileRQnDaZAY",
+  authDomain: "robot-pintar-7b1a3.firebaseapp.com",
+  databaseURL: "https://robot-pintar-7b1a3-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "robot-pintar-7b1a3",
+  storageBucket: "robot-pintar-7b1a3.firebasestorage.app",
+  messagingSenderId: "908302592700",
+  appId: "1:908302592700:web:0cd39ac0dcaaaa4704feb9"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function simpanData() {
+    let topik = document.getElementById('topikData').value.trim();
+    let isi = document.getElementById('isiData').value.trim();
+    let editId = document.getElementById('editId').value;
+    
+    if(!topik || !isi) return alert("Topik dan Isi wajib diisi!");
+    
+    if(editId) {
+        // Mode Edit
+        db.ref('pengetahuan_pribadi/' + editId).update({
+            topik: topik,
+            isi: isi
+        }).then(() => {
+            alert("Ingatan berhasil diupdate!");
+            resetForm();
+        });
+    } else {
+        // Mode Tambah Baru
+        db.ref('pengetahuan_pribadi').push({
+            topik: topik,
+            isi: isi
+        }).then(() => {
+            alert("Ingatan baru tersimpan di otak robot!");
+            resetForm();
+        });
+    }
+}
+
+function editData(id, topik, isi) {
+    document.getElementById('editId').value = id;
+    document.getElementById('topikData').value = topik;
+    document.getElementById('isiData').value = isi;
+    document.getElementById('judulForm').innerText = "Edit Ingatan";
+    document.getElementById('btnBatal').style.display = "block";
+    window.scrollTo(0, 0);
+}
+
+function hapusData(id) {
+    if(confirm("Yakin hapus ingatan ini dari otak robot?")) {
+        db.ref('pengetahuan_pribadi/' + id).remove();
+    }
+}
+
+function resetForm() {
+    document.getElementById('editId').value = '';
+    document.getElementById('topikData').value = '';
+    document.getElementById('isiData').value = '';
+    document.getElementById('judulForm').innerText = "Tambah Ingatan Baru";
+    document.getElementById('btnBatal').style.display = "none";
+}
+
+// Tampilkan Data Secara Real-time
+db.ref('pengetahuan_pribadi').on('value', (snap) => {
+    let html = '';
+    if(snap.exists()) {
+        let data_list = [];
+        snap.forEach(c => data_list.push({key: c.key, val: c.val()}));
+        // data_list.reverse(); // Uncomment jika ingin yang terbaru di atas
+        
+        data_list.forEach(item => {
+            let d = item.val;
+            html += `<div class="list-item">
+                        <h4><i class="fas fa-tag"></i> ${d.topik}</h4>
+                        <p>${d.isi}</p>
+                        <div style="margin-top:10px; text-align:right;">
+                            <button class="btn-edit" onclick="editData('${item.key}', \`${d.topik}\`, \`${d.isi}\`)"><i class="fas fa-pen"></i> Edit</button>
+                            <button class="btn-hapus" onclick="hapusData('${item.key}')"><i class="fas fa-trash"></i> Hapus</button>
+                        </div>
+                     </div>`;
+        });
+    } else {
+        html = '<p style="text-align:center;color:#aaa;">Belum ada ingatan yang tersimpan.</p>';
+    }
+    document.getElementById('listData').innerHTML = html;
+});
+</script>
+</body>
+</html>
